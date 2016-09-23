@@ -52,7 +52,15 @@ class WorkBatcher
   end
 
   def add(work_object)
-    add_multiple([work_object])
+    @mutex.synchronize do
+      if @deduplicate
+        key = @deduplicator.call(work_object)
+        @queue[key] = work_object
+      else
+        @queue << work_object
+      end
+      schedule_processing
+    end
   end
 
   def add_multiple(work_objects)
