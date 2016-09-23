@@ -136,12 +136,15 @@ private
 
   def process_queue
     if @deduplicate
-      @processor.call(@queue.values)
+      queue_copy = @queue.values
     else
-      @processor.call(@queue.dup)
+      queue_copy = @queue.dup
     end
     @processed += @queue.size
     @queue.clear
+    @executor.post do
+      @processor.call(queue_copy)
+    end
   end
 
   def default_deduplicator(work_object)
