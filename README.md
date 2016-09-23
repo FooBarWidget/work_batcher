@@ -27,7 +27,7 @@ sleep 3
 wb.shutdown
 ~~~
 
-**Table of contents***
+**Table of contents**
 
  * [Installation](#installation)
  * [Features](#features)
@@ -52,7 +52,7 @@ wb.shutdown
  * Introspectable: you can query its processing status at any time.
  * Thread-safe.
  * Uses threads under the hood.
- * The only dependency is concurrent-ruby. Unlike e.g. [http://www.rubydoc.info/gems/task_batcher/0.1.0](task_batcher), this library does not depend on EventMachine.
+ * The only dependency is concurrent-ruby. Unlike e.g. [task_batcher](http://www.rubydoc.info/gems/task_batcher), this library does not depend on EventMachine.
 
 ## Not a background job system
 
