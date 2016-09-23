@@ -1,3 +1,24 @@
+# Copyright (c) 2016 Phusion B.V.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+
 require 'thread'
 require 'concurrent'
 require 'concurrent/scheduled_task'
@@ -24,7 +45,10 @@ class WorkBatcher
     task = @mutex.synchronize do
       @scheduled_processing_task
     end
-    task.wait! if task
+    if task
+      task.reschedule(0)
+      task.wait!
+    end
   end
 
   def add(work_object)
@@ -50,13 +74,23 @@ class WorkBatcher
   def status
     result = {}
     @mutex.synchronize do
-      if @processing_task
-        result[:scheduled_processing_time] = @processing_start_time
+      if @scheduled_processing_task
+        result[:scheduled_processing_time] = @scheduled_processing_time
       end
       result[:queue_count] = @queue.size
       result[:processed_count] = @processed
     end
     result
+  end
+
+  def inspect_queue
+    @mutex.synchronize do
+      if @deduplicate
+        @queue.values.dup
+      else
+        @queue.dup
+      end
+    end
   end
 
 private
@@ -96,7 +130,7 @@ private
     if @deduplicate
       @processor.call(@queue.values)
     else
-      @processor.call(@queue)
+      @processor.call(@queue.dup)
     end
     @processed += @queue.size
     @queue.clear
